@@ -8,8 +8,24 @@ import java.lang.reflect.Proxy
  */
 object Reflekt
 {
-    fun test()
+    /**
+     * Maps the original object to a proxy
+     * interface implementation through our
+     * [ReflectInvocation].
+     */
+    inline fun <reified T : Any> map(
+        target: Any
+    ): T
     {
-        Proxy.newProxyInstance()
+        val invocationHandler =
+            ReflectInvocation(target)
+
+        val proxy = Proxy.newProxyInstance(
+            T::class.java.classLoader,
+            arrayOf(T::class.java),
+            invocationHandler
+        )
+
+        return proxy as T
     }
 }

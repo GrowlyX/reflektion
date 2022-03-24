@@ -18,7 +18,11 @@ dependencies {
     api "org.jetbrains.kotlin:kotlin-stdlib:1.6.10"
     api "org.jetbrains.kotlin:kotlin-reflect:1.6.10"
 
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.8.2'
+    // for later
+    api "io.github.reactivecircus.cache4k:cache4k:0.4.0"
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
 }
 
 compileKotlin {
@@ -42,6 +46,10 @@ publishing {
             from components.kotlin
         }
     }
+}
+
+test {
+    useJUnitPlatform()
 }
 
 tasks.build.dependsOn(shadowJar)
