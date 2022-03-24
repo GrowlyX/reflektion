@@ -19,7 +19,7 @@ import java.lang.reflect.Method
  * @author GrowlyX
  * @since 3/23/2022
  */
-class ReflectInvocation(
+class ReflektInvocation(
     private val internalObject: Any
 ) : InvocationHandler
 {

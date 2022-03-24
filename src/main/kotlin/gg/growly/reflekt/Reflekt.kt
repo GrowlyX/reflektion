@@ -11,14 +11,14 @@ object Reflekt
     /**
      * Maps the original object to a proxy
      * interface implementation through our
-     * [ReflectInvocation].
+     * [ReflektInvocation].
      */
     inline fun <reified T : Any> map(
         target: Any
     ): T
     {
         val invocationHandler =
-            ReflectInvocation(target)
+            ReflektInvocation(target)
 
         val proxy = Proxy.newProxyInstance(
             T::class.java.classLoader,
