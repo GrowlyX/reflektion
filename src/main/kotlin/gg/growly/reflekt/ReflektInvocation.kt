@@ -1,5 +1,6 @@
 package gg.growly.reflekt
 
+import gg.growly.reflekt.mapping.Field
 import gg.growly.reflekt.mapping.Mapping
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
@@ -45,7 +46,7 @@ class ReflektInvocation(
 
         val javaClass = internalObject.javaClass
 
-        if (!mapping.field)
+        if (method.isAnnotationPresent(Field::class.java))
         {
             val internal = javaClass
                 .getMethod(
@@ -64,6 +65,8 @@ class ReflektInvocation(
                 ?: throw IllegalArgumentException(
                     "No internal method with the name $mappedMethod was found in ${javaClass.simpleName}."
                 )
+
+            internal.isAccessible = true
 
             return internal
                 .get(internalObject)
