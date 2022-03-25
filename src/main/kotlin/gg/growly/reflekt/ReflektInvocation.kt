@@ -63,7 +63,7 @@ class ReflektInvocation(
             val internal = javaClass
                 .getField(mappedMethod)
                 ?: throw IllegalArgumentException(
-                    "No internal method with the name $mappedMethod was found in ${javaClass.simpleName}."
+                    "No internal field with the name $mappedMethod was found in ${javaClass.simpleName}."
                 )
 
             internal.isAccessible = true
