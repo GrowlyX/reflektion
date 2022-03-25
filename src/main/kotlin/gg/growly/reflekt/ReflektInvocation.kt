@@ -2,6 +2,7 @@ package gg.growly.reflekt
 
 import gg.growly.reflekt.mapping.Field
 import gg.growly.reflekt.mapping.Mapping
+import gg.growly.reflekt.mapping.ReflektReturnValue
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 
@@ -45,6 +46,7 @@ class ReflektInvocation(
             .toTypedArray()
 
         val javaClass = internalObject.javaClass
+        val value: Any
 
         if (method.isAnnotationPresent(Field::class.java))
         {
@@ -56,7 +58,7 @@ class ReflektInvocation(
                     "No internal method with the name $mappedMethod was found in ${javaClass.simpleName}."
                 )
 
-            return internal
+            value = internal
                 .invoke(internalObject, *args)
         } else
         {
@@ -68,8 +70,20 @@ class ReflektInvocation(
 
             internal.isAccessible = true
 
-            return internal
+            value = internal
                 .get(internalObject)
+        }
+
+        return if (
+            method.isAnnotationPresent(
+                ReflektReturnValue::class.java
+            )
+        )
+        {
+            Reflekt.map(value::class, value)
+        } else
+        {
+            value
         }
     }
 }

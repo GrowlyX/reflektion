@@ -1,6 +1,7 @@
 package gg.growly.reflekt
 
 import java.lang.reflect.Proxy
+import kotlin.reflect.KClass
 
 /**
  * @author GrowlyX
@@ -9,20 +10,30 @@ import java.lang.reflect.Proxy
 object Reflekt
 {
     /**
+     * Inline function to wrap [map].
+     */
+    inline fun <reified T : Any> map(
+        target: Any
+    ): T
+    {
+        return map(T::class, target)
+    }
+
+    /**
      * Maps the original object to a proxy
      * interface implementation through our
      * [ReflektInvocation].
      */
-    inline fun <reified T : Any> map(
-        target: Any
+    fun <T : Any> map(
+        clazz: KClass<T>, target: Any
     ): T
     {
         val invocationHandler =
             ReflektInvocation(target)
 
         val proxy = Proxy.newProxyInstance(
-            T::class.java.classLoader,
-            arrayOf(T::class.java),
+            clazz.java.classLoader,
+            arrayOf(clazz.java),
             invocationHandler
         )
 
