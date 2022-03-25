@@ -15,5 +15,6 @@ package gg.growly.reflekt.mapping
     AnnotationTarget.FUNCTION
 )
 annotation class Mapping(
-    val value: String = ""
+    val value: String = "",
+    val field: Boolean = false
 )

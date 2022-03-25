@@ -26,7 +26,7 @@ class ReflektInvocation(
     @Throws(Throwable::class)
     override fun invoke(
         proxy: Any, method: Method, args: Array<out Any>
-    ): Any
+    ): Any?
     {
         val mapping = method
             .getAnnotation(Mapping::class.java)
@@ -45,16 +45,28 @@ class ReflektInvocation(
 
         val javaClass = internalObject.javaClass
 
-        val internal = javaClass
-            .getMethod(
-                mappedMethod, *parameterTypes
-            )
-            ?: throw IllegalArgumentException(
-                "No internal method with the name $mappedMethod was found in ${javaClass.simpleName}."
-            )
+        if (!mapping.field)
+        {
+            val internal = javaClass
+                .getMethod(
+                    mappedMethod, *parameterTypes
+                )
+                ?: throw IllegalArgumentException(
+                    "No internal method with the name $mappedMethod was found in ${javaClass.simpleName}."
+                )
 
-        return internal
-            .invoke(internalObject, *args)
-            ?: Any()
+            return internal
+                .invoke(internalObject, *args)
+        } else
+        {
+            val internal = javaClass
+                .getField(mappedMethod)
+                ?: throw IllegalArgumentException(
+                    "No internal method with the name $mappedMethod was found in ${javaClass.simpleName}."
+                )
+
+            return internal
+                .get(internalObject)
+        }
     }
 }
