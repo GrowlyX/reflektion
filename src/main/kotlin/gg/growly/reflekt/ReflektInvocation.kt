@@ -7,83 +7,122 @@ import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 
 /**
- * Handles the relation between
- * proxy & internal methods.
- *
- * This also invokes the internal
- * method when the implementation's
+ * Handles the invocation of
+ * internal methods when a
  * proxy method is called.
  *
  * We will exclude any methods which
  * are not annotated with [Mapping] as
- * they do are not "proxy" methods.
+ * they are not "proxy" methods.
+ *
+ * Reflections for mappings will be
+ * cached on initialization.
  *
  * @author GrowlyX
  * @since 3/23/2022
  */
 class ReflektInvocation(
-    private val internalObject: Any
+    private val internalObject: Any, clazz: Class<*>
 ) : InvocationHandler
 {
+    private val methodMappings =
+        mutableMapOf<Method, Method>()
+
+    private val fieldMappings =
+        mutableMapOf<Method, java.lang.reflect.Field>()
+
+    init
+    {
+        for (method in clazz.methods)
+        {
+            val mapping = method
+                .getAnnotation(Mapping::class.java)
+                ?: continue
+
+            // The name of the internal method
+            // we're trying to target.
+            val mappedMethod = mapping.value
+                .ifEmpty { method.name }
+
+            val parameterTypes = method
+                .parameters.map { it.type }
+                .toTypedArray()
+
+            val javaClass = internalObject.javaClass
+
+            if (!method.isAnnotationPresent(Field::class.java))
+            {
+                val internal = javaClass
+                    .getMethod(
+                        mappedMethod, *parameterTypes
+                    )
+                    ?: throw IllegalArgumentException(
+                        "No internal method with the name $mappedMethod was found in ${javaClass.simpleName}."
+                    )
+
+                this.methodMappings[method] = internal
+            } else
+            {
+                val internal = javaClass
+                    .getField(mappedMethod)
+                    ?: throw IllegalArgumentException(
+                        "No internal field with the name $mappedMethod was found in ${javaClass.simpleName}."
+                    )
+
+                this.fieldMappings[method] = internal
+            }
+        }
+    }
+
     @Throws(Throwable::class)
     override fun invoke(
         proxy: Any, method: Method, args: Array<out Any>
     ): Any?
     {
-        val mapping = method
-            .getAnnotation(Mapping::class.java)
-            ?: throw IllegalArgumentException(
-                "Method ${method.name} is not annotated with @Mapping."
-            )
+        var value: Any?
 
-        // The name of the internal method
-        // we're trying to target.
-        val mappedMethod = mapping.value
-            .ifEmpty { method.name }
-
-        val parameterTypes = method
-            .parameters.map { it.type }
-            .toTypedArray()
-
-        val javaClass = internalObject.javaClass
-        val value: Any
-
-        if (method.isAnnotationPresent(Field::class.java))
+        if (!method.isAnnotationPresent(Field::class.java))
         {
-            val internal = javaClass
-                .getMethod(
-                    mappedMethod, *parameterTypes
-                )
+            val internal = methodMappings[method]
                 ?: throw IllegalArgumentException(
-                    "No internal method with the name $mappedMethod was found in ${javaClass.simpleName}."
+                    "No internal method was found for ${
+                        method.name
+                    } in ${javaClass.simpleName}."
                 )
 
             value = internal
                 .invoke(internalObject, *args)
         } else
         {
-            val internal = javaClass
-                .getField(mappedMethod)
+            val internal = fieldMappings[method]
                 ?: throw IllegalArgumentException(
-                    "No internal field with the name $mappedMethod was found in ${javaClass.simpleName}."
+                    "No internal method was found for ${
+                        method.name
+                    } in ${javaClass.simpleName}."
                 )
+
+            val accessibility = internal
+                .isAccessible
 
             internal.isAccessible = true
 
             value = internal
                 .get(internalObject)
+
+            internal.isAccessible =
+                accessibility
         }
 
-        return if (
-            method.isAnnotationPresent(
-                ReflektReturnValue::class.java
-            )
-        )
+        val reflektReturnValue = method
+            .isAnnotationPresent(ReflektReturnValue::class.java)
+
+        if (reflektReturnValue && value != null)
         {
-            Reflekt.map(value::class, value)
-        } else
-        {
-            value
+            // TODO: 3/30/2022 cache reflekt mappings
+            //  for auto-generated values
+            value = Reflekt.map(value::class, value)
         }
+
+        return value
     }
 }

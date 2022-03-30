@@ -29,7 +29,9 @@ object Reflekt
     ): T
     {
         val invocationHandler =
-            ReflektInvocation(target)
+            ReflektInvocation(
+                target, clazz.java
+            )
 
         val proxy = Proxy.newProxyInstance(
             clazz.java.classLoader,
